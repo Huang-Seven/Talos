@@ -1,0 +1,9 @@
+local_port = 50051
+conf_dir = "/etc/monitor_shell/"
+server_addr = "127.0.0.1"
+server_port = 50050
+start_dir = ""
+check_dir = ""
+run_dir = ""
+host_name = "test"
+monitor_conf_dir = "/etc/monitor_shell/monitor_conf/"

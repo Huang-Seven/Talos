@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package rpc;
+
+
+service FileGetter {
+    rpc GetFile (FileRequest) returns (FileResponse ){}
+}
+
+message FileRequest {
+    string path = 1;
+}
+
+message FileResponse {
+    // string files = 2;
+    repeated File files =1;
+}
+
+message File {
+	string name = 1;
+	int64 size = 2;
+	bool isDir = 3;
+}
+
+service MonitorConfGetter {
+    rpc GetConf (MonitorConfRequest) returns (MonitorConfResponse ){}
+}
+
+message MonitorConfRequest {
+    string host = 1;
+}
+
+message MonitorConfResponse {
+    repeated  MonitorConf confs = 1;
+}
+
+message MonitorConf {
+    string Module    =      1;
+    string	Cwd      =      2;
+    string	Env      =      3;
+    string	Contact  =      4;
+    string	Cmdline  =      5;
+    string	Script   =      6;
+    int64 	Procnum  =      7;
+    string	Logpath  =      8;
+    int64 	Lognum   =      9;
+    int64 	Logsize  =      10;
+    string	Cmd      =      11;
+    int64 	Restartlimit  = 12;
+}

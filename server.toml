@@ -1,0 +1,11 @@
+localaddr = ""
+localport = 50050
+agentport = 50051
+confdir = ""
+rundir = ""
+[mysql]
+  user = "root"
+  password = ""
+  host = "127.0.0.1"
+  port = 3306
+  db = "talos"
