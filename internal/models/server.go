@@ -31,17 +31,17 @@ type Server struct {
 
 type Modinfo struct {
 	Module       string `json:"module",mapstructure:"module"`
-	Cwd          string `json:"cwd"`
-	Env          string `json:"env"`
-	Contact      string `json:"contact"`
-	Cmdline      string `json:"cmdline"`
-	Script       string `json:"script"`
-	Procnum      int32  `json:"procnum"`
-	Logpath      string `json:"logpath"`
-	Lognum       int32  `json:"lognum"`
-	Logsize      int32  `json:"logsize"`
-	Cmd          string `json:"cmd"`
-	Restartlimit int32  `json:"restartlimit"`
+	Cwd          string `json:"cwd",mapstructure:"cwd"`
+	Env          string `json:"env",mapstructure:"env"`
+	Contact      string `json:"contact",mapstructure:"contact"`
+	Cmdline      string `json:"cmdline",mapstructure:"cmdline"`
+	Script       string `json:"script",mapstructure:"script"`
+	Procnum      int32  `json:"procnum",mapstructure:"procnum"`
+	Logpath      string `json:"logpath",mapstructure:"logpath"`
+	Lognum       int32  `json:"lognum",mapstructure:"lognum"`
+	Logsize      int32  `json:"logsize",mapstructure:"logsize"`
+	Cmd          string `json:"cmd",mapstructure:"cmd"`
+	Restartlimit int32  `json:"restartlimit",mapstructure:"restartlimit"`
 }
 
 func (s *Server) init() {

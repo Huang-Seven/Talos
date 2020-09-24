@@ -10,6 +10,7 @@ import (
 )
 
 type AgentConf struct {
+	LocalAddr      string `mapstructure:"local_addr"`
 	LocalPort      int    `mapstructure:"local_port"`
 	ConfDir        string `mapstructure:"conf_dir"`
 	ServerAddr     string `mapstructure:"server_addr"`
