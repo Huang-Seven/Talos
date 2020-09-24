@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -57,6 +58,17 @@ func (a *Agent) init() {
 	} else {
 		a.pcList = ReadProcDir(a.Ac.MonitorConfDir)
 	}
+	a.FrequencyMonitor = 5
+	a.FrequenceCollect = 5
+	if a.Ac.LocalAddr == "" {
+		ip, err := tools.GetClientIp()
+		if err != nil {
+			log.Printf("Get ip fail: %v", err)
+		} else {
+			a.Ac.LocalAddr = ip
+			log.Printf("Get local addr: %v", ip)
+		}
+	}
 	a.opChan = make(chan *conf.Operation, 6)
 	a.taskin = make(chan *tools.Task, 10)
 	a.taskout = make(chan *tools.TaskStatus, 10)
@@ -92,12 +104,17 @@ func newConf(path string, m *pb.MonitorConf) {
 	}
 }
 
-func (a *Agent) geneConf() {
+func (a *Agent) getRpcConn() (conn *grpc.ClientConn) {
 	address := fmt.Sprintf("%v:%d", a.Ac.ServerAddr, a.Ac.ServerPort)
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("Fail to connect: %v, err: %v", address, err)
 	}
+	return
+}
+
+func (a *Agent) geneConf() {
+	conn := a.getRpcConn()
 	defer conn.Close()
 	c := pb.NewMonitorConfGetterClient(conn)
 	cntx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -146,9 +163,9 @@ func (a *Agent) operate() {
 				{
 					log.Println("Reload conf")
 				}
-			case 2: //gene conf
+			case 2: //gene monitor conf
 				{
-					log.Println("Re-genetate conf")
+					log.Println("Regenerate conf")
 					a.geneConf()
 				}
 			default:
@@ -251,22 +268,27 @@ func sendmail(title, content, to string) {
 	log.Printf("SendMail-> title: %v content: %v to: %v", title, content, to)
 }
 
+//rpc server 保存事件信息
 func (a *Agent) postProcess(pc *Proc) {
-	//event type
-	//et := "1"
-	//{
-	//	"module_name": {pc.Module},
-	//	"env":        {pc.Env},
-	//	"stop_time":  {pc.Ts1.Format(tfmt)},
-	//	"start_time": {pc.Ts2.Format(tfmt)},
-	//	"cost_time":  {strconv.FormatFloat(pc.Sp.Seconds(), 'f', 3, 32)},
-	//	"host":       {a.Ac.LocalAddr},
-	//	"event_type": {et},
-	//	"mail_list":  {pc.MailTo}
-	//}
-	//TODO
-	//rpc server 保存事件信息
-	log.Printf("PostProcess info: %v", pc)
+	et := int64(1) //event type
+	conn := a.getRpcConn()
+	defer conn.Close()
+	c := pb.NewProcessEventClient(conn)
+	cntx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := c.ProcessEventHandler(cntx, &pb.ProcessEventRequest{
+		ModuleName: pc.Module,
+		Env:        pc.Env,
+		StopTime:   pc.Ts1.Format(tfmt),
+		StartTime:  pc.Ts2.Format(tfmt),
+		CostTime:   strconv.FormatFloat(pc.Sp.Seconds(), 'f', 3, 32),
+		Host:       a.Ac.LocalAddr,
+		EventType:  et,
+		MailList:   pc.Contact})
+	if err != nil {
+		log.Fatalf("Could not to get conf: %v", err)
+	}
+	log.Printf("PostProcess info -> status_code: %d, message: %v", r.GetStatusCode(), r.GetMessage())
 }
 
 func procDown(a *Agent, pc *Proc) {
@@ -301,6 +323,7 @@ func procUp(a *Agent, pc *Proc) {
 	if pc.RestartNum != 0 {
 		pc.Ts2 = time.Now()
 		_ = pc.CalSp()
+		//保存事件记录
 		a.postProcess(pc)
 		title := fmt.Sprintf("[%s][(%s)服务恢复]", pc.Module, pc.Env)
 		contentList := a.getMail(pc, 1)

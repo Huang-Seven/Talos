@@ -2,26 +2,6 @@ syntax = "proto3";
 
 package rpc;
 
-
-service FileGetter {
-    rpc GetFile (FileRequest) returns (FileResponse ){}
-}
-
-message FileRequest {
-    string path = 1;
-}
-
-message FileResponse {
-    // string files = 2;
-    repeated File files =1;
-}
-
-message File {
-	string name = 1;
-	int64 size = 2;
-	bool isDir = 3;
-}
-
 service MonitorConfGetter {
     rpc GetConf (MonitorConfRequest) returns (MonitorConfResponse ){}
 }
@@ -35,7 +15,7 @@ message MonitorConfResponse {
 }
 
 message MonitorConf {
-    string Module    =      1;
+    string  Module   =      1;
     string	Cwd      =      2;
     string	Env      =      3;
     string	Contact  =      4;
@@ -47,4 +27,24 @@ message MonitorConf {
     int64 	Logsize  =      10;
     string	Cmd      =      11;
     int64 	Restartlimit  = 12;
+}
+
+service ProcessEvent {
+    rpc ProcessEventHandler (ProcessEventRequest) returns (ProcessEventResponse ){}
+}
+
+message ProcessEventRequest {
+    string ModuleName   =   1;
+    string Env          =   2;
+    string StopTime     =   3;
+    string StartTime    =   4;
+    string CostTime     =   5;
+    string Host         =   6;
+    int64  EventType    =   7;
+    string MailList     =   8;
+}
+
+message ProcessEventResponse {
+    int64  StatusCode   =   1;
+    string Message      =   2;
 }

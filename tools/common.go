@@ -1,7 +1,9 @@
 package tools
 
 import (
+	"errors"
 	"math/rand"
+	"net"
 	"os"
 	"time"
 )
@@ -32,4 +34,20 @@ func IsDir(path string) bool {
 
 func IsFile(path string) bool {
 	return !IsDir(path)
+}
+
+func GetClientIp() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String(), nil
+			}
+		}
+	}
+	return "", errors.New("can not find the client ip address")
+
 }

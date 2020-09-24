@@ -39,7 +39,7 @@ type ProcT struct {
 }
 
 func ReadProc(path, name string) (*Proc, error) {
-	log.Printf("path: %v, name: %v", path, name)
+	log.Printf("Conf file: %v/%v", path, name)
 	pc := new(Proc)
 	v := viper.New()
 	v.AddConfigPath(path)
@@ -58,6 +58,7 @@ func ReadProc(path, name string) (*Proc, error) {
 }
 
 func ReadProcDir(path string) []*Proc {
+	path = strings.TrimSuffix(path, "/")
 	log.Printf("Read Monitor conf dir: %v", path)
 	dList, _ := ioutil.ReadDir(path)
 	var pList []*Proc
