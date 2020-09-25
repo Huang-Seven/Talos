@@ -303,7 +303,6 @@ func procDown(a *Agent, pc *Proc) {
 	pc.Ts2 = n
 	_ = pc.CalSp()
 	if pc.RestartNum < pc.Restartlimit {
-		//content = fmt.Sprintf("%s\n第%d次重启",content,pc.RestartNum)
 		a.taskin <- &t
 	}
 	pc.RestartNum += 1
