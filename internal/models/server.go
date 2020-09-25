@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 
@@ -45,7 +44,7 @@ type ProcessMonitor struct {
 	Env        string    `json:"env"`
 	StopTime   time.Time `json:"stop_time"`
 	StartTime  time.Time `json:"start_time"`
-	CostTime   int32     `json:"cost_time"`
+	CostTime   string    `json:"cost_time"`
 	Host       string    `json:"host"`
 	EventType  int32     `json:"event_type"`
 	MailList   string    `json:"mail_list"`
@@ -94,14 +93,13 @@ func (s *Server) ProcessEventHandler(ctx context.Context, in *pb.ProcessEventReq
 		log.Println(stopT, err)
 	}
 	startT, _ := time.Parse(tfmt, in.StartTime)
-	ct, _ := strconv.ParseInt(in.CostTime, 10, 32)
 	pm := ProcessMonitor{
 		ModuleName: in.ModuleName,
 		Host:       in.Host,
 		Env:        in.Env,
 		StopTime:   stopT,
 		StartTime:  startT,
-		CostTime:   int32(ct),
+		CostTime:   in.CostTime,
 		EventType:  int32(in.EventType),
 		MailList:   in.MailList}
 	_ = s.db.Create(&pm)

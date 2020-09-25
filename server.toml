@@ -1,8 +1,7 @@
-localaddr = ""
-localport = 50050
-agentport = 50051
-confdir = ""
-rundir = ""
+local_addr = "127.0.0.1"
+local_port = 50050
+conf_dir = "/etc/monitor_shell/"
+run_dir = ""
 [mysql]
   user = "root"
   password = ""

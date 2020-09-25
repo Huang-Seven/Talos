@@ -23,7 +23,7 @@ CREATE TABLE `process_monitor` (
   `env` char(10) DEFAULT NULL,
   `stop_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `start_time` timestamp NULL DEFAULT NULL,
-  `cost_time` int DEFAULT NULL,
+  `cost_time` char(64) DEFAULT NULL,
   `host` char(15) DEFAULT NULL,
   `event_type` int DEFAULT NULL COMMENT '1 down',
   `mail_list` char(255) DEFAULT NULL

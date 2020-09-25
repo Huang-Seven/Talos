@@ -211,7 +211,7 @@ func (pc *Proc) Check() (f bool) {
 			f = false
 		}
 	} else {
-		log.Printf("[%s]Pc Script empty!", pc.Module)
+		log.Printf("Process: [%s] script empty!", pc.Module)
 		f = false
 	}
 	return f

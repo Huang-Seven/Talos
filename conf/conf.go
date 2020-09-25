@@ -23,38 +23,37 @@ type AgentConf struct {
 }
 
 type ServerConf struct {
-	//LocalAddr string
-	//AgentPort int
-	LocalPort int
-	ConfDir   string
-	//RunDir  string
-	MySQL MySQLConfig
+	LocalAddr string      `mapstructure:"local_addr"`
+	LocalPort int         `mapstructure:"local_port"`
+	ConfDir   string      `mapstructure:"conf_dir"`
+	RunDir    string      `mapstructure:"run_dir"`
+	MySQL     MySQLConfig `mapstructure:"mysql"`
 }
 
 type MySQLConfig struct {
-	MysqlHost string
-	MysqlPort int
-	MysqlUser string
-	MysqlPwd  string
-	MysqlDb   string
+	MysqlHost string `mapstructure:"host"`
+	MysqlPort int    `mapstructure:"port"`
+	MysqlUser string `mapstructure:"user"`
+	MysqlPwd  string `mapstructure:"password"`
+	MysqlDb   string `mapstructure:"db"`
 }
 
 type Operation struct {
-	Action int // `0 actions,1 update data,2 reload pc from server`
+	Action int // 0 actions,1 update data,2 reload pc from server
 	OperationAgent
 	OperationServer
 }
 
 type OperationAgent struct {
-	FrequencyMonitor, FrequenceCollect, MonitorSleep, Maintain int
+	FrequencyMonitor, MonitorSleep, Maintain int
 }
 
 type OperationServer struct {
 }
 
 type ReturnData struct {
-	ReturnCode int
-	ReturnData interface{}
+	ReturnCode int         `json:"code"`
+	ReturnData interface{} `json:"data"`
 }
 
 func (sc *ServerConf) LoadConf() {
@@ -68,12 +67,10 @@ func (sc *ServerConf) LoadConf() {
 		panic(fmt.Errorf(time.Now().Format("2006-01-02 15:04:05"),
 			"Fatal error config file: %s \n", err))
 	}
-
-	sc.MySQL.MysqlUser = vs.GetString("mysql.user")
-	sc.MySQL.MysqlPwd = vs.GetString("mysql.password")
-	sc.MySQL.MysqlHost = vs.GetString("mysql.host")
-	sc.MySQL.MysqlPort = vs.GetInt("mysql.port")
-	sc.MySQL.MysqlDb = vs.GetString("mysql.db")
+	err = vs.Unmarshal(sc)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ac *AgentConf) LoadConf() {

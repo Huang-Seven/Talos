@@ -11,11 +11,6 @@ import (
 )
 
 func execShell(oneTask Task, oneTaskSta *TaskStatus) {
-	//one_task_sta := TaskStatus{one_task.Tid,time.Now(),time.Now(),101,-999,"",""}
-	//saveTaskSta(&one_task_sta)
-
-	//defer exitsave(&one_task_sta)
-	//init status
 	oneTaskSta.Tid = oneTask.Tid
 	oneTaskSta.Begin = time.Now()
 
@@ -44,7 +39,7 @@ func execShell(oneTask Task, oneTaskSta *TaskStatus) {
 				oneTaskSta.Ret = s.ExitStatus()
 			}
 		}
-		log.Printf("Cmd Run error [%s]", err.Error())
+		log.Printf("Cmd run error [%s]", err.Error())
 		oneTaskSta.Status = 203
 		errInfo := fmt.Sprintf("%s|%s", err.Error(), stderr.String())
 		oneTaskSta.Err = errInfo

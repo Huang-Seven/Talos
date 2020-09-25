@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -59,7 +58,6 @@ func (a *Agent) init() {
 		a.pcList = ReadProcDir(a.Ac.MonitorConfDir)
 	}
 	a.FrequencyMonitor = 5
-	a.FrequenceCollect = 5
 	if a.Ac.LocalAddr == "" {
 		ip, err := tools.GetClientIp()
 		if err != nil {
@@ -100,7 +98,7 @@ func newConf(path string, m *pb.MonitorConf) {
 
 	err := v.WriteConfig()
 	if err != nil {
-		log.Println("Error: Write config failed: ", err)
+		log.Println("Error: write config failed: ", err)
 	}
 }
 
@@ -125,15 +123,14 @@ func (a *Agent) geneConf() {
 	}
 	confs := r.GetConfs()
 	for _, i := range confs {
-		//log.Printf("Found conf: %v", i)
-		newConf(strings.TrimSuffix(a.Ac.MonitorConfDir, "/"), i)
+		go newConf(strings.TrimSuffix(a.Ac.MonitorConfDir, "/"), i)
 	}
 	a.pcList = ReadProcDir(a.Ac.MonitorConfDir)
 }
 
 func (a *Agent) operate() {
 	go func() {
-		log.Println("Starting Waiting Message...")
+		log.Println("Starting waiting message...")
 		defer a.wg.Done()
 		a.wg.Add(1)
 		for c := range a.opChan {
@@ -144,13 +141,9 @@ func (a *Agent) operate() {
 					a.FrequencyMonitor = c.FrequencyMonitor
 					log.Println("Change monitor")
 				}
-				if c.FrequenceCollect != 0 {
-					a.FrequenceCollect = c.FrequenceCollect
-					log.Println("Change collect")
-				}
 				if c.MonitorSleep != 0 {
 					a.MonitorSleep = c.MonitorSleep
-					log.Println("Stop Monitor Process for ", a.MonitorSleep, " Seconds")
+					log.Printf("Stop monitor process for %d seconds", a.MonitorSleep)
 				}
 				if c.Maintain == 1 {
 					a.maintain = false
@@ -184,7 +177,7 @@ func (a *Agent) runHttp() {
 
 func (a *Agent) MonitorProcess() {
 	go func() {
-		log.Println("Starting Monitor Process...")
+		log.Println("Starting monitor process...")
 		defer a.wg.Done()
 		a.wg.Add(1)
 		for {
@@ -196,7 +189,7 @@ func (a *Agent) MonitorProcess() {
 				} else {
 					err := os.Chdir(a.Ac.CheckDir)
 					if err != nil {
-						log.Println("Change Dir", err)
+						log.Println("Change dir", err)
 						continue
 					} else {
 						af = pc.Check()
@@ -222,7 +215,7 @@ func (a *Agent) RunTask() {
 	wi := 10
 	for i := 0; i < wi; i++ {
 		go func(i int) {
-			log.Printf("Starting Task Worker%d...", i)
+			log.Printf("Starting task worker%d...", i)
 			defer a.wg.Done()
 			a.wg.Add(1)
 			for t := range a.taskin {
@@ -230,12 +223,11 @@ func (a *Agent) RunTask() {
 				ts.Status = 999
 				if t.Path == "" {
 					t.Path = a.Ac.RunDir
-					info := fmt.Sprintf("Tid[%d] Lost Path Using Default[%s]", t.Tid, t.Path)
-					log.Println(info)
+					log.Printf("Tid[%d] lost path using default[%s]", t.Tid, t.Path)
 				}
-				log.Printf("Worker[%d]:Run cmd[%s],path[%s],Tid[%d]", i, t.Cmd, t.Path, t.Tid)
+				log.Printf("Worker[%d]: run cmd[%s],path[%s],Tid[%d]", i, t.Cmd, t.Path, t.Tid)
 				t.RunTask(&ts)
-				log.Printf("Worker[%d]:Task[%d] Done\n", i, t.Tid)
+				log.Printf("Worker[%d]: task[%d] done\n", i, t.Tid)
 				a.taskout <- &ts
 			}
 		}(i)
@@ -252,19 +244,20 @@ func (a *Agent) getMail(pc *Proc, downUp int) []string {
 	} else {
 		s = "进程恢复"
 	}
-	contentList = append(contentList, fmt.Sprintf("报警原因:%s", s))
-	contentList = append(contentList, fmt.Sprintf("机器地址:%s", a.Ac.LocalAddr))
-	contentList = append(contentList, fmt.Sprintf("累次报警次数:%d", pc.RestartNum))
-	contentList = append(contentList, fmt.Sprintf("首次报警时间:%s", pc.Ts1.Format(tfmt)))
-	contentList = append(contentList, fmt.Sprintf("末次报警时间:%s", pc.Ts2.Format(tfmt)))
-	contentList = append(contentList, fmt.Sprintf("报警持续时间:%s", pc.Sp.String()))
-	if pc.RestartNum >= pc.Restartlimit {
+	contentList = append(contentList, fmt.Sprintf("报警原因: %s", s))
+	contentList = append(contentList, fmt.Sprintf("机器地址: %s", a.Ac.LocalAddr))
+	contentList = append(contentList, fmt.Sprintf("累次报警次数: %d", pc.RestartNum))
+	contentList = append(contentList, fmt.Sprintf("首次报警时间: %s", pc.Ts1.Format(tfmt)))
+	contentList = append(contentList, fmt.Sprintf("末次报警时间: %s", pc.Ts2.Format(tfmt)))
+	contentList = append(contentList, fmt.Sprintf("报警持续时间: %s", pc.Sp.String()))
+	if pc.RestartNum >= pc.Restartlimit && downUp == 0 {
 		contentList = append(contentList, "未设置重启或超出重试次数，请人工检查")
 	}
 	return contentList
 }
 
 func sendmail(title, content, to string) {
+	//TODO
 	log.Printf("SendMail-> title: %v content: %v to: %v", title, content, to)
 }
 
@@ -281,7 +274,7 @@ func (a *Agent) postProcess(pc *Proc) {
 		Env:        pc.Env,
 		StopTime:   pc.Ts1.Format(tfmt),
 		StartTime:  pc.Ts2.Format(tfmt),
-		CostTime:   strconv.FormatFloat(pc.Sp.Seconds(), 'f', 3, 32),
+		CostTime:   pc.Sp.String(),
 		Host:       a.Ac.LocalAddr,
 		EventType:  et,
 		MailList:   pc.Contact})
@@ -292,7 +285,7 @@ func (a *Agent) postProcess(pc *Proc) {
 }
 
 func procDown(a *Agent, pc *Proc) {
-	log.Println(pc.Module, "is Dead")
+	log.Printf("Process: %v is down", pc.Module)
 	t := tools.Task{Tid: tools.RandTid(),
 		Cmd:  pc.Cmd,
 		Path: pc.Cwd}
@@ -347,7 +340,7 @@ func (a *Agent) Run() {
 	a.RunTask()
 	a.MonitorProcess()
 	defer a.wg.Done()
-	log.Println("Starting HttpServer...")
+	log.Println("Starting http server...")
 	go a.runHttp()
 	a.wg.Add(1)
 	log.Println("Run and service...")
